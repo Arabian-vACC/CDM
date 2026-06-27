@@ -60,11 +60,10 @@ jobs:
       - name: Download validator script
         run: |
           # The validator ships alongside the workflow in .github/scripts/
-          cp .github/scripts/validate_files.py validate_files.py 2>/dev/null || true
+          cp .github/workflows/validate_files.py validate_files.py 2>/dev/null || true
 
-          # Fallback: if it wasn't committed yet, write it inline
           if [ ! -f validate_files.py ]; then
-            echo "validate_files.py not found in .github/scripts/ — please commit it there." >&2
+            echo "validate_files.py not found in .github/workflows/ — please commit it there." >&2
             exit 1
           fi
 
