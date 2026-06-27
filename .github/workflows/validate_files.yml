@@ -1,0 +1,96 @@
+name: CDM File Format Validation
+
+
+on:
+  push:
+    paths:
+      - "**/taxizones.txt"
+      - "**/rate.txt"
+      - "**/SidInterval.txt"
+      - "**/CTOT.txt"
+      - "**/slots.txt"
+      - "**/cad.txt"
+  pull_request:
+    paths:
+      - "**/taxizones.txt"
+      - "**/rate.txt"
+      - "**/SidInterval.txt"
+      - "**/CTOT.txt"
+      - "**/slots.txt"
+      - "**/cad.txt"
+  workflow_dispatch:
+    inputs:
+      full_scan:
+        description: "Validate all CDM files (not just changed ones)"
+        required: false
+        default: "true"
+        type: boolean
+
+jobs:
+  validate:
+    name: Validate CDM Files
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # ------------------------------------------------------------------ #
+      # On push/PR: only validate files that actually changed.              #
+      # On workflow_dispatch (or full_scan=true): validate everything.       #
+      # ------------------------------------------------------------------ #
+      - name: Detect changed CDM files
+        id: changed
+        if: github.event_name != 'workflow_dispatch'
+        uses: tj-actions/changed-files@v44
+        with:
+          files: |
+            **/taxizones.txt
+            **/rate.txt
+            **/SidInterval.txt
+            **/CTOT.txt
+            **/slots.txt
+            **/cad.txt
+
+      - name: Download validator script
+        run: |
+          # The validator ships alongside the workflow in .github/scripts/
+          cp .github/scripts/validate_files.py validate_files.py 2>/dev/null || true
+
+          # Fallback: if it wasn't committed yet, write it inline
+          if [ ! -f validate_files.py ]; then
+            echo "validate_files.py not found in .github/scripts/ — please commit it there." >&2
+            exit 1
+          fi
+
+      - name: Run validation (changed files only)
+        if: github.event_name != 'workflow_dispatch' && steps.changed.outputs.any_changed == 'true'
+        run: |
+          echo "Files changed:"
+          echo "${{ steps.changed.outputs.all_changed_files }}"
+          python validate_files.py ${{ steps.changed.outputs.all_changed_files }}
+
+      - name: Run validation (all CDM files)
+        if: github.event_name == 'workflow_dispatch' || steps.changed.outputs.any_changed != 'true'
+        run: |
+          echo "Running full scan across repository…"
+          python validate_files.py
+
+      - name: Upload validation report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cdm-validation-errors
+          path: |
+            **/taxizones.txt
+            **/rate.txt
+            **/SidInterval.txt
+            **/CTOT.txt
+            **/slots.txt
+            **/cad.txt
+          retention-days: 7
