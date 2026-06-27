@@ -1,0 +1,12 @@
+{
+  "error_count": 1,
+  "warning_count": 0,
+  "errors": [
+    {
+      "file": "OMAE/SidInterval.txt",
+      "line": 1,
+      "original": "OMAA,13L,ATUDO,ATUDO,",
+      "message": "Separation '' must be a positive decimal number"
+    }
+  ]
+}
