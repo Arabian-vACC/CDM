@@ -1,6 +1,5 @@
 # Add info here for slot controlled events
 # format: [CID],[CTOT]
-cid,slot
 1350469,9350
 1880208,9410
 1650654,9450
